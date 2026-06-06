@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Component Lab — Design System QA Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0A0612;
+      --bg2:       #0F0A1A;
+      --surface:   #160F24;
+      --surface2:  #1E1630;
+      --border:    rgba(255,255,255,0.07);
+      --border2:   rgba(255,255,255,0.12);
+      --text:      #F0ECF8;
+      --text2:     #A89CC4;
+      --text3:     #6B5F85;
+      --accent:    #8B3CF7;
+      --accent2:   #A855F7;
+      --accent3:   #7C3AED;
+      --green:     #10B981;
+      --green-bg:  rgba(16,185,129,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── GLOW ORBS ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 { width: 600px; height: 600px; background: rgba(139,60,247,0.12); top: -200px; left: -100px; }
+    .orb-2 { width: 500px; height: 500px; background: rgba(168,85,247,0.08); top: 40%; right: -150px; }
+    .orb-3 { width: 400px; height: 400px; background: rgba(124,58,237,0.1); bottom: 10%; left: 20%; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 18px 40px;
+      display: flex; align-items: center; gap: 32px;
+      background: rgba(10,6,18,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { flex: 1; }
+    .nav-links { margin-left: auto; }
+    /* On desktop hide hamburger, logo stays left */
+    @media (min-width: 769px) {
+      .hamburger { display: none !important; }
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo img { width: 28px; height: 28px; border-radius: 7px; }
+    .nav-logo-text { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 15px; color: var(--text); }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 400; color: var(--text2); text-decoration: none; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      background: var(--accent);
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .nav-cta:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    /* ── SECTIONS ── */
+    section { position: relative; z-index: 1; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(139,60,247,0.12);
+      border: 1px solid rgba(139,60,247,0.25);
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--accent2);
+      font-weight: 500;
+      margin-bottom: 28px;
+      letter-spacing: 0.2px;
+    }
+    .hero-badge span { width: 6px; height: 6px; background: var(--accent2); border-radius: 50%; display: inline-block; }
+    .hero-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: clamp(42px, 7vw, 80px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      max-width: 900px;
+      margin-bottom: 24px;
+    }
+    .hero-title em {
+      font-style: normal;
+      background: linear-gradient(135deg, #A855F7, #7C3AED, #C084FC);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text2);
+      max-width: 560px;
+      line-height: 1.65;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+    .hero-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #9B4BFF, #6D28D9);
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px; font-weight: 500;
+      padding: 13px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 32px rgba(139,60,247,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(139,60,247,0.4); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent;
+      color: var(--text2);
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px; font-weight: 400;
+      padding: 13px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      border: 1px solid var(--border2);
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    .btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); }
+    .hero-stat {
+      margin-top: 64px;
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--text3);
+    }
+    .hero-stat strong { color: var(--text2); font-weight: 500; }
+
+    /* ── PLUGIN MOCKUP ── */
+    .mockup-wrap {
+      position: relative;
+      max-width: 340px;
+      margin: 60px auto 0;
+    }
+    .mockup-glow {
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(ellipse at center, rgba(139,60,247,0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .mockup {
+      background: #F5F5F5;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+      position: relative;
+    }
+    .mockup-topbar {
+      background: #E8E8E8;
+      padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #D5D5D5;
+    }
+    .mockup-topbar-left { display: flex; align-items: center; gap: 6px; }
+    .mockup-topbar-left img { width: 14px; height: 14px; border-radius: 3px; }
+    .mockup-topbar-left span { font-size: 10px; color: #555; font-weight: 500; font-family: 'Poppins', sans-serif; }
+    .mockup-close { font-size: 14px; color: #888; }
+    .mockup-body { padding: 12px; background: #F0F0F3; display: flex; flex-direction: column; gap: 6px; }
+    .mockup-header { background: #fff; border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #E5E5E5; }
+    .mockup-header-left { display: flex; align-items: center; gap: 8px; }
+    .mockup-header-left img { width: 26px; height: 26px; border-radius: 6px; }
+    .mockup-header-title { font-size: 11px; font-weight: 600; color: #1A1A1A; font-family: 'Poppins', sans-serif; }
+    .mockup-header-sub { font-size: 9px; color: #A3A3A3; font-family: 'Poppins', sans-serif; }
+    .mockup-pro-tag { font-size: 8px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #9B4BFF, #5B10CC); padding: 2px 7px; border-radius: 20px; }
+    .mockup-banner { background: rgba(22,163,74,0.08); border: 1px solid rgba(22,163,74,0.2); border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; gap: 6px; }
+    .mockup-banner-dot { width: 8px; height: 8px; color: #16A34A; flex-shrink: 0; }
+    .mockup-banner-text { font-size: 9px; color: #15803D; font-weight: 500; font-family: 'Poppins', sans-serif; }
+    .mockup-card { background: #fff; border-radius: 7px; padding: 9px 11px; display: flex; align-items: center; gap: 9px; border: 1px solid #E5E5E5; }
+    .mockup-card-icon { width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; }
+    .mockup-card-info { flex: 1; }
+    .mockup-card-title { font-size: 10px; font-weight: 600; color: #1A1A1A; font-family: 'Poppins', sans-serif; }
+    .mockup-card-desc { font-size: 8px; color: #A3A3A3; margin-top: 1px; font-family: 'Poppins', sans-serif; }
+    .mockup-toggle { width: 26px; height: 15px; background: #7C3AED; border-radius: 10px; position: relative; flex-shrink: 0; }
+    .mockup-toggle::after { content: ''; position: absolute; top: 2px; right: 2px; width: 11px; height: 11px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .mockup-toggle-off { background: #D4D4D4; }
+    .mockup-toggle-off::after { right: auto; left: 2px; }
+    .mockup-run { background: linear-gradient(135deg, #9B4BFF, #5B10CC); border-radius: 8px; padding: 10px; text-align: center; font-size: 10px; font-weight: 600; color: #fff; font-family: 'Poppins', sans-serif; margin-top: 2px; }
+
+    /* ── SECTION COMMON ── */
+    .section-wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--accent2);
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 16px;
+      color: var(--text2);
+      line-height: 1.65;
+      max-width: 540px;
+      font-weight: 300;
+    }
+
+    /* ── PROBLEM SECTION ── */
+    .problem { padding: 100px 0; }
+    .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+    .problem-stats { display: flex; flex-direction: column; gap: 20px; }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+    .stat-card:hover { border-color: rgba(139,60,247,0.3); }
+    .stat-number {
+      font-family: 'Poppins', sans-serif;
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--accent2);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .stat-label { font-size: 14px; color: var(--text2); line-height: 1.5; }
+
+    /* ── FEATURES ── */
+    .features { padding: 100px 0; }
+    .features-header { text-align: center; margin-bottom: 64px; }
+    .features-header .section-sub { margin: 0 auto; }
+    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover { border-color: rgba(139,60,247,0.25); transform: translateY(-2px); }
+    .feature-card.featured {
+      grid-column: span 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(139,60,247,0.08), rgba(124,58,237,0.04));
+      border-color: rgba(139,60,247,0.2);
+    }
+    .feature-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+    .feature-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      background: rgba(139,60,247,0.1);
+      border: 1px solid rgba(139,60,247,0.2);
+      padding: 3px 8px; border-radius: 4px;
+      margin-bottom: 12px;
+    }
+    .feature-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 20px; font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+    .feature-desc { font-size: 14px; color: var(--text2); line-height: 1.65; font-weight: 300; }
+    .feature-free-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 9px; font-weight: 700;
+      color: var(--green);
+      background: var(--green-bg);
+      border: 1px solid rgba(16,185,129,0.2);
+      padding: 3px 8px; border-radius: 4px;
+      margin-bottom: 12px;
+    }
+    .feature-visual { display: flex; flex-direction: column; gap: 8px; }
+    .feature-row {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; color: var(--text2);
+    }
+    .feature-row-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+    .feature-row-dot.amber { background: #F59E0B; }
+    .feature-row-dot.blue  { background: #3B82F6; }
+
+    /* ── HOW IT WORKS ── */
+    .how { padding: 100px 0; }
+    .how-header { text-align: center; margin-bottom: 64px; }
+    .how-header .section-sub { margin: 0 auto; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .step {
+      text-align: center;
+      padding: 40px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+    .step:hover { border-color: rgba(139,60,247,0.25); }
+    .step-num {
+      font-family: 'Poppins', sans-serif;
+      font-size: 64px; font-weight: 800;
+      color: rgba(139,60,247,0.15);
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    .step-title { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .step-desc { font-size: 14px; color: var(--text2); line-height: 1.6; font-weight: 300; }
+
+    /* ── PRICING ── */
+    .pricing { padding: 100px 0; }
+    .pricing-header { text-align: center; margin-bottom: 64px; }
+    .pricing-header .section-sub { margin: 0 auto; }
+    .pricing-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; max-width: 900px; margin: 0 auto; }
+    .pricing-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      position: relative;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .pricing-card:hover { transform: translateY(-2px); }
+    .pricing-card.featured {
+      background: linear-gradient(135deg, rgba(139,60,247,0.12), rgba(109,40,217,0.08));
+      border-color: rgba(139,60,247,0.35);
+      box-shadow: 0 0 40px rgba(139,60,247,0.1);
+    }
+    .pricing-popular {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, #9B4BFF, #6D28D9);
+      color: #fff; font-size: 10px; font-weight: 700;
+      padding: 4px 14px; border-radius: 20px;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .pricing-name { font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .pricing-price {
+      font-family: 'Poppins', sans-serif;
+      font-size: 42px; font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .pricing-price sup { font-size: 20px; letter-spacing: 0; vertical-align: top; margin-top: 8px; font-weight: 600; }
+    .pricing-price span { font-size: 14px; font-weight: 400; color: var(--text3); letter-spacing: 0; }
+    .pricing-desc { font-size: 13px; color: var(--text3); margin-bottom: 24px; line-height: 1.5; }
+    .pricing-divider { height: 1px; background: var(--border); margin-bottom: 20px; }
+    .pricing-features { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+    .pricing-feature { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: var(--text2); line-height: 1.4; }
+    .pricing-feature svg { flex-shrink: 0; margin-top: 2px; color: var(--green); }
+    .pricing-feature.muted { color: var(--text3); }
+    .pricing-feature.muted svg { color: var(--text3); }
+    .pricing-btn {
+      display: block; width: 100%;
+      text-align: center;
+      padding: 12px;
+      border-radius: 10px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px; font-weight: 500;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .pricing-btn-primary {
+      background: linear-gradient(135deg, #9B4BFF, #6D28D9);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(139,60,247,0.25);
+    }
+    .pricing-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .pricing-btn-outline {
+      border: 1px solid var(--border2);
+      color: var(--text2);
+    }
+    .pricing-btn-outline:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+    .pricing-save {
+      text-align: center;
+      font-size: 12px;
+      color: var(--green);
+      margin-top: 12px;
+      font-weight: 500;
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .cta-inner {
+      max-width: 600px; margin: 0 auto;
+      background: linear-gradient(135deg, rgba(139,60,247,0.1), rgba(109,40,217,0.06));
+      border: 1px solid rgba(139,60,247,0.2);
+      border-radius: 24px;
+      padding: 60px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-inner::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139,60,247,0.5), transparent);
+    }
+    .cta-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+    .cta-sub { font-size: 15px; color: var(--text2); margin-bottom: 32px; line-height: 1.6; font-weight: 300; }
+    .cta-trial { font-size: 12px; color: var(--text3); margin-top: 14px; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; z-index: 1;
+    }
+    .footer-logo { display: flex; align-items: center; gap: 8px; }
+    .footer-logo img { width: 22px; height: 22px; border-radius: 5px; }
+    .footer-logo-text { font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700; color: var(--text2); }
+    .footer-copy { font-size: 12px; color: var(--text3); }
+    .footer-link { font-size: 12px; color: var(--text3); text-decoration: none; }
+    .footer-link:hover { color: var(--text2); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-badge  { animation: fadeUp 0.5s ease both; }
+    .hero-title  { animation: fadeUp 0.5s 0.1s ease both; }
+    .hero-sub    { animation: fadeUp 0.5s 0.2s ease both; }
+    .hero-actions { animation: fadeUp 0.5s 0.3s ease both; }
+    .mockup-wrap { animation: fadeUp 0.6s 0.4s ease both; }
+
+    /* ── HAMBURGER MENU ── */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 36px; height: 36px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px;
+      flex-shrink: 0;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px; height: 2px;
+      background: var(--text2);
+      border-radius: 2px;
+      transition: all 0.25s ease;
+      transform-origin: center;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 61px; left: 0; right: 0;
+      background: rgba(10,6,18,0.97);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px 20px;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 99;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px; font-weight: 400;
+      color: var(--text2);
+      text-decoration: none;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      transition: color 0.15s;
+    }
+    .mobile-menu a:last-child { border-bottom: none; }
+    .mobile-menu a:hover { color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 14px 20px; gap: 10px; }
+      .nav-links { display: none; }
+      .hamburger { display: flex; flex-shrink: 0; }
+      .nav-logo { flex: 1; }
+      .nav-cta { margin-left: auto; flex-shrink: 0; }
+      .problem-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .feature-card.featured { grid-column: span 1; grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+      footer { flex-direction: column; gap: 12px; text-align: center; }
+    }
+
+    /* ── CHECK ICON ── */
+    .check { width: 14px; height: 14px; }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- NAV -->
+  <nav>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="#" class="nav-logo">
+      <img src="data:image/png;base64,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" alt="Component Lab" />
+      <span class="nav-logo-text">Component Lab</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <a href="https://www.figma.com/community/plugin/1643018818142522872" target="_blank" class="nav-cta">Get Plugin →</a>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features" class="mobile-nav-link">Features</a>
+    <a href="#how" class="mobile-nav-link">How it works</a>
+    <a href="#pricing" class="mobile-nav-link">Pricing</a>
+  </div>
+
+  <script>
+    var hamburger = document.getElementById('hamburger');
+    var mobileMenu = document.getElementById('mobileMenu');
+    hamburger.addEventListener('click', function() {
+      hamburger.classList.toggle('open');
+      mobileMenu.classList.toggle('open');
+    });
+    document.querySelectorAll('.mobile-nav-link').forEach(function(link) {
+      link.addEventListener('click', function() {
+        hamburger.classList.remove('open');
+        mobileMenu.classList.remove('open');
+      });
+    });
+  </script>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge"><span></span> Figma Plugin — Design System QA</div>
+    <h1 class="hero-title">Stop testing components<br /><em>manually.</em></h1>
+    <p class="hero-sub">Component Lab automates design system QA — stress testing every state, variant, and theme in one click. What used to take hours now takes seconds.</p>
+    <div class="hero-actions">
+      <a href="https://www.figma.com/community/plugin/1643018818142522872" target="_blank" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 3a3 3 0 110 6 3 3 0 010-6zm0 14c-3.314 0-6-1.343-6-3v-1c0-1.657 2.686-3 6-3s6 1.343 6 3v1c0 1.657-2.686 3-6 3z"/></svg>
+        Install Free on Figma
+      </a>
+      <a href="#pricing" class="btn-secondary">View Pricing →</a>
+    </div>
+
+    <!-- Plugin Mockup -->
+    <div class="mockup-wrap">
+      <div class="mockup-glow"></div>
+      <div class="mockup">
+        <div class="mockup-topbar">
+          <div class="mockup-topbar-left">
+            <img src="data:image/png;base64,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" alt="icon" />
+            <span>Component Lab - Design System QA To...</span>
+          </div>
+          <span class="mockup-close">✕</span>
+        </div>
+        <div class="mockup-body">
+          <div class="mockup-header">
+            <div class="mockup-header-left">
+              <img src="data:image/png;base64,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" alt="icon" />
+              <div>
+                <div class="mockup-header-title">Component Lab <span class="mockup-pro-tag">★ Pro</span></div>
+                <div class="mockup-header-sub">Design System QA Tool</div>
+              </div>
+            </div>
+            <span style="font-size:9px;color:#A3A3A3;border:1px solid #E5E5E5;padding:2px 6px;border-radius:3px;">v1.0</span>
+          </div>
+          <div class="mockup-banner">
+            <svg class="mockup-banner-dot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="mockup-banner-text"><strong>Component Lab Pro</strong> — all tests unlocked</span>
+          </div>
+          <div style="background:#fff;border-radius:7px;padding:8px 11px;border:1px solid #E5E5E5;display:flex;align-items:center;gap:8px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#16A34A;flex-shrink:0;"></div>
+            <span style="font-size:10px;color:#525252;font-family:'DM Sans',sans-serif;">Testing <strong style="color:#1A1A1A;">Chip</strong></span>
+          </div>
+          <div class="mockup-card">
+            <div class="mockup-card-icon" style="background:#F0EAFF;">≡</div>
+            <div class="mockup-card-info">
+              <div class="mockup-card-title">Content &amp; State Test</div>
+              <div class="mockup-card-desc">Short, medium &amp; long text · all boolean states</div>
+            </div>
+            <div class="mockup-toggle"></div>
+          </div>
+          <div class="mockup-card">
+            <div class="mockup-card-icon" style="background:#E8F8EF;font-size:9px;">⊞</div>
+            <div class="mockup-card-info">
+              <div class="mockup-card-title">Variant Test</div>
+              <div class="mockup-card-desc">All variant properties × boolean states</div>
+            </div>
+            <div class="mockup-toggle"></div>
+          </div>
+          <div class="mockup-card">
+            <div class="mockup-card-icon" style="background:#FFF4E3;">⊡</div>
+            <div class="mockup-card-info">
+              <div class="mockup-card-title">Nested Instance Test</div>
+              <div class="mockup-card-desc">Test variants &amp; booleans of nested</div>
+            </div>
+            <div class="mockup-toggle mockup-toggle-off"></div>
+          </div>
+          <div class="mockup-card">
+            <div class="mockup-card-icon" style="background:#EAF3FF;">◎</div>
+            <div class="mockup-card-info">
+              <div class="mockup-card-title">Theme Test</div>
+              <div class="mockup-card-desc">Test with Figma variable modes</div>
+            </div>
+            <div class="mockup-toggle mockup-toggle-off"></div>
+          </div>
+          <div class="mockup-run">▶ Run Tests</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="problem">
+    <div class="section-wrap">
+      <div class="problem-grid">
+        <div>
+          <div class="section-label">The Problem</div>
+          <h2 class="section-title">Manual QA is<br />killing your time</h2>
+          <p class="section-sub" style="margin-bottom:0;">Every component release means hours of clicking through states, variants, and themes manually. Mistakes get through. Engineers get confused. Design systems lose trust.</p>
+        </div>
+        <div class="problem-stats">
+          <div class="stat-card">
+            <div class="stat-number">2–8h</div>
+            <div class="stat-label">Average time spent manually QA-ing a single component before release</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">10s</div>
+            <div class="stat-label">Time it takes Component Lab to generate every test case automatically</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">100%</div>
+            <div class="stat-label">Of boolean state combinations tested — nothing missed, nothing skipped</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="section-wrap">
+      <div class="features-header">
+        <div class="section-label">4 Powerful Tests</div>
+        <h2 class="section-title">Everything your component<br />needs to be QA'd</h2>
+        <p class="section-sub">Each test generates organised frames on your Figma canvas — ready to review, share with engineers, or export.</p>
+      </div>
+      <div class="features-grid">
+
+        <div class="feature-card featured">
+          <div>
+            <div class="feature-free-badge">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Free Forever
+            </div>
+            <h3 class="feature-title">Content &amp; State Test</h3>
+            <p class="feature-desc">Tests your component with short, medium and long text content. Automatically generates every boolean property combination — showing all visible and hidden states in one organised frame.</p>
+          </div>
+          <div class="feature-visual">
+            <div class="feature-row"><div class="feature-row-dot"></div>1. short · Icon: true · Label: true</div>
+            <div class="feature-row"><div class="feature-row-dot"></div>2. short · Icon: false · Label: true</div>
+            <div class="feature-row"><div class="feature-row-dot amber"></div>3. medium · Icon: true · Label: false</div>
+            <div class="feature-row"><div class="feature-row-dot blue"></div>4. long · Icon: true · Label: true</div>
+            <div class="feature-row" style="opacity:0.4;">5. long · Icon: false · Label: false</div>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(18,160,92,0.1);">⊞</div>
+          <div class="feature-badge">★ Pro</div>
+          <h3 class="feature-title">Variant Test</h3>
+          <p class="feature-desc">Cycles through every variant property — Type, Size, State and more — combined with all boolean combinations. One click, every combination covered.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(245,158,11,0.1);">⊡</div>
+          <div class="feature-badge">★ Pro</div>
+          <h3 class="feature-title">Nested Instance Test</h3>
+          <p class="feature-desc">Scans for nested sub-components like icons, avatars, and badges. Select which ones to test and cycle through their variant and boolean properties individually.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(59,130,246,0.1);">◎</div>
+          <div class="feature-badge">★ Pro</div>
+          <h3 class="feature-title">Theme Test</h3>
+          <p class="feature-desc">Applies your Figma variable collection modes to test across Light, Dark and custom brand themes. Each theme generates its own dedicated frame.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how" id="how">
+    <div class="section-wrap">
+      <div class="how-header">
+        <div class="section-label">How It Works</div>
+        <h2 class="section-title">Three steps to zero QA debt</h2>
+        <p class="section-sub">No setup. No configuration. Just select a component and run.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <h3 class="step-title">Select a component</h3>
+          <p class="step-desc">Click any component instance on your Figma canvas. Component Lab instantly detects all its properties, variants, and nested instances.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <h3 class="step-title">Choose your tests</h3>
+          <p class="step-desc">Toggle which tests to run — Content & State, Variant, Nested Instance, or Theme. Mix and match based on what you need to verify.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <h3 class="step-title">Review the output</h3>
+          <p class="step-desc">Component Lab generates organised frames directly on your canvas. Every state documented, every combination covered. Ready to share with your team.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing" id="pricing">
+    <div class="section-wrap">
+      <div class="pricing-header">
+        <div class="section-label">Pricing</div>
+        <h2 class="section-title">Start free. Upgrade when ready.</h2>
+        <p class="section-sub">Content &amp; State Test is free forever. Unlock all 4 tests with Pro — starting with a 7-day free trial.</p>
+      </div>
+      <div class="pricing-grid">
+
+        <!-- Free -->
+        <div class="pricing-card">
+          <div class="pricing-name">Free</div>
+          <div class="pricing-price"><sup>$</sup>0</div>
+          <div class="pricing-desc">Forever free. No credit card needed.</div>
+          <div class="pricing-divider"></div>
+          <div class="pricing-features">
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Content &amp; State Test
+            </div>
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Unlimited components
+            </div>
+            <div class="pricing-feature muted">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Variant Test
+            </div>
+            <div class="pricing-feature muted">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Nested Instance Test
+            </div>
+            <div class="pricing-feature muted">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Theme Test
+            </div>
+          </div>
+          <a href="https://www.figma.com/community/plugin/1643018818142522872" target="_blank" class="pricing-btn pricing-btn-outline">Install Free</a>
+        </div>
+
+        <!-- Monthly -->
+        <div class="pricing-card featured">
+          <div class="pricing-popular">Most Popular</div>
+          <div class="pricing-name">Pro Monthly</div>
+          <div class="pricing-price"><sup>$</sup>9<span>/month</span></div>
+          <div class="pricing-desc">Billed monthly. Cancel anytime.</div>
+          <div class="pricing-divider"></div>
+          <div class="pricing-features">
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Everything in Free
+            </div>
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Variant Test
+            </div>
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Nested Instance Test
+            </div>
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Theme Test
+            </div>
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              7-day free trial
+            </div>
+          </div>
+          <a href="https://www.figma.com/community/plugin/1643018818142522872" target="_blank" class="pricing-btn pricing-btn-primary">Start Free Trial</a>
+        </div>
+
+        <!-- Yearly -->
+        <div class="pricing-card">
+          <div class="pricing-name">Pro Yearly</div>
+          <div class="pricing-price"><sup>$</sup>79<span>/year</span></div>
+          <div class="pricing-desc">Billed annually. Save 27%.</div>
+          <div class="pricing-divider"></div>
+          <div class="pricing-features">
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Everything in Free
+            </div>
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Variant Test
+            </div>
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Nested Instance Test
+            </div>
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Theme Test
+            </div>
+            <div class="pricing-feature">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              7-day free trial
+            </div>
+          </div>
+          <a href="https://www.figma.com/community/plugin/1643018818142522872" target="_blank" class="pricing-btn pricing-btn-outline">Start Free Trial</a>
+          <div class="pricing-save">💰 Save 9/year vs monthly</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-inner">
+      <h2 class="cta-title">Ready to automate your component QA?</h2>
+      <p class="cta-sub">Join designers who've replaced hours of manual testing with one click. Start free — no credit card required.</p>
+      <a href="https://www.figma.com/community/plugin/1643018818142522872" target="_blank" class="btn-primary" style="display:inline-flex;">
+        Install on Figma — It's Free →
+      </a>
+      <div class="cta-trial">7-day Pro trial included · No credit card · Cancel anytime</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">
+      <img src="data:image/png;base64,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" alt="Component Lab" />
+      <span class="footer-logo-text">Component Lab</span>
+    </div>
+    <span class="footer-copy">© 2025 Component Lab · Design System QA Tool</span>
+    <a href="https://www.figma.com/community/plugin/1643018818142522872" target="_blank" class="footer-link">Figma Community →</a>
+  </footer>
+
+</body>
+</html>
